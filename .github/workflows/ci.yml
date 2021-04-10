@@ -20,11 +20,11 @@ jobs:
     - name: Cache
       uses: actions/cache@v2.1.4
       with:
-        path: ~/go/pkg/mod 
-        key: ${{ runner.os }}-go-${{ hashFiles('**.go.sum') }} 
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**.go.sum') }}
         restore-keys: |
           ${{ runner.os }} -go-
-          
+
   # build test
   build:
     needs: setup
@@ -32,8 +32,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build
-        run: go build -v ./...
-  
+        run: go build -v ./.../chats
+
   # test
   test:
     needs: setup
@@ -41,9 +41,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Test
-        run: go test -v ./...
-      
-  # lint 
+        run: go test -v ./.../chats
+
+  # lint
   lint:
     needs: setup
     runs-on: ubuntu-latest
@@ -54,14 +54,14 @@ jobs:
         with:
           github_token: ${{ github.token }}
 
-    
-
-    
 
 
-    
 
-    
-      
-    
-      
+
+
+
+
+
+
+
+
