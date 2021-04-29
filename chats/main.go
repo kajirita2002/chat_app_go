@@ -4,9 +4,12 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sync"
 	"text/template"
+
+	"github.com/kaji2002/chat_app/trace"
 )
 
 type templateHandler struct {
@@ -27,6 +30,8 @@ var host = flag.String("host", ":8080", "The host of the application")
 func main() {
 	flag.Parse()
 	r := newRoom()
+	// os.Stoutでターミナルに出力が行われる
+	r.tracer = trace.New(os.Stdout)
 	http.Handle("/", &templateHandler{filename: "chat.html"})
 	http.Handle("/room", r)
 
