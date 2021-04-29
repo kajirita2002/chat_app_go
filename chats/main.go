@@ -35,6 +35,8 @@ func main() {
 	// ます*authHandlerのServeHTTPメソッド⇨認証成功⇨*templateHandlerのServeHTTPメソッドが実行
 	http.Handle("/", MustAuth(&templateHandler{filename: "chat.html"}))
 	http.Handle("/login", &templateHandler{filename: "login.html"})
+	// http.Handlerを実装していないハンドラはHandleFunc関数を使う
+	http.HandleFunc("/auth/", loginHandler)
 	http.Handle("/room", r)
 
 	go r.run()
