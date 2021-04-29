@@ -23,9 +23,9 @@ func (t *tracer) Trace(a ...interface{}) {
 	t.out.Write([]byte("\n"))
 }
 
-type nilTracer struct{}
+type nilTracer struct {}
 
-func (t *nilTracer) Trace(a ...interface{})
+func (t *nilTracer) Trace(a ...interface{}) {}
 
 func Off() Tracer {
 	return &nilTracer{}
