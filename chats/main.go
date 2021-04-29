@@ -32,7 +32,8 @@ func main() {
 	r := newRoom()
 	// os.Stoutでターミナルに出力が行われる
 	r.tracer = trace.New(os.Stdout)
-	http.Handle("/", &templateHandler{filename: "chat.html"})
+	// ます*authHandlerのServeHTTPメソッド⇨認証成功⇨*templateHandlerのServeHTTPメソッドが実行
+	http.Handle("/", MustAuth(&templateHandler{filename: "chat.html"}))
 	http.Handle("/room", r)
 
 	go r.run()
