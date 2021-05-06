@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/stretchr/gomniauth"
+	"github.com/stretchr/objx"
 )
 
 type authHandler struct {
@@ -51,6 +52,36 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Location", loginUrl)
 		w.WriteHeader(http.StatusTemporaryRedirect)
+
+	case "callback":
+		provider, err := gomniauth.Provider(provider)
+		if err != nil {
+			log.Fatalln("認証プロバイダーの取得に失敗しました:", provider, "-", err)
+		}
+		// RawQueryの値を解析して認証のプロセスを完了させ認証情報を発行
+		creds, err := provider.CompleteAuth(objx.MustFromURLQuery(r.URL.RawQuery))
+		if err != nil {
+			log.Fatalln("認証を完了できませんでした:", provider, "-", err)
+		}
+		// userの情報を取得する これはjsonデータ
+		user, err := provider.GetUser(creds)
+		if err != nil {
+			log.Fatalln("ユーザーを取得できませんでした:", provider, "-", err)
+		}
+		// データのnameフィールドの部分をBase64にエンコードする
+		// Base64では特殊な文字が入るのを防ぐ(URLやクッキーにセットしたい時に使える)
+		authCookieValue := objx.New(map[string]interface{}{
+			"name": user.Name(),
+		}).MustBase64()
+		// authというクッキーにデータを保持する
+		http.SetCookie(w, &http.Cookie{
+			Name:  "auth",
+			Value: authCookieValue,
+			Path:  "/"})
+		// リダイレクト
+		w.Header()["Location"] = []string{"/chat"}
+		w.WriteHeader(http.StatusTemporaryRedirect)
+
 	default:
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "アクション%sには非対応です", action)
