@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Test
-        run: go test -v ./.../chats
+        run: go test -v ./.../trace
 
   # lint
   lint:
