@@ -6,10 +6,11 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/kaji2002/chat_app/trace"
+	"github.com/stretchr/objx"
 )
 
 type room struct {
-	forward chan []byte
+	forward chan *message
 
 	join chan *client
 
@@ -22,11 +23,10 @@ type room struct {
 
 func newRoom() *room {
 	return &room{
-		forward: make(chan []byte),
+		forward: make(chan *message),
 		join:    make(chan *client),
 		leave:   make(chan *client),
 		clients: make(map[*client]bool),
-		// 
 		tracer:  trace.Off(),
 	}
 }
@@ -42,7 +42,7 @@ func (r *room) run() {
 			close(client.send)
 			r.tracer.Trace("クライアントが退出しました")
 		case msg := <-r.forward:
-			r.tracer.Trace("メッセージを受信しました: ", string(msg))
+			r.tracer.Trace("メッセージを受信しました: ", msg.Message)
 			for client := range r.clients {
 				select {
 				case client.send <- msg:
@@ -65,15 +65,24 @@ const (
 var upgrader = &websocket.Upgrader{ReadBufferSize: socketBuffeSize, WriteBufferSize: messageBufferSize}
 
 func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// socketを作成
 	socket, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
 		log.Fatal("ServeHTTP:", err)
 		return
 	}
+	// 認証
+	authCookie, err := req.Cookie("auth")
+	if err != nil {
+		log.Fatal("クッキーの取得に失敗しました:", err)
+		return
+	}
 	client := &client{
-		socket: socket,
-		send:   make(chan []byte, messageBufferSize),
-		room:   r,
+		socket:   socket,
+		send:     make(chan *message, messageBufferSize),
+		room:     r,
+		// エンコードされたクッキーの値をマップのオブジェクトへ復元する
+		userData: objx.MustFromBase64(authCookie.Value),
 	}
 	r.join <- client
 	defer func() { r.leave <- client }()

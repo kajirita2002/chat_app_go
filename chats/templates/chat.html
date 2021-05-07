@@ -25,28 +25,34 @@
 
             $("#chatbox").submit(function(){
 
-            if (!msgBox.val()) return false;
-            if (!socket) {
-                alert("Error: There is no socket connection.");
+                if (!msgBox.val()) return false;
+                if (!socket) {
+                    alert("Error: There is no socket connection.");
+                    return false;
+                }
+                // json.stringifyを使ってJSONオブジェクトをJSON文字列に変換しサーバーに送信する
+                socket.send(JSON.stringify({"Message": msgBox.val()}))
+                msgBox.val("");
                 return false;
-            }
-
-            socket.send(msgBox.val());
-            msgBox.val("");
-            return false;
 
             });
 
             if (!window["WebSocket"]) {
-            alert("Error: Your browser does not support web sockets.")
+                alert("Error: Your browser does not support web sockets.")
             } else {
-            socket = new WebSocket("ws://localhost:8080/room");
-            socket.onclose = function() {
-                alert("Connection has been closed.");
-            }
-            socket.onmessage = function(e) {
-                messages.append($("<li>").text(e.data));
-            }
+                socket = new WebSocket("ws://localhost:8080/room");
+                socket.onclose = function() {
+                    alert("Connection has been closed.");
+                }
+                socket.onmessage = function(e) {
+                    var msg = eval("("+e.data+")")
+                    messages.append(
+                        $("<li>").append(
+                            $("<strong>").text(msg.Name + ": "),
+                            $("<span>").text(msg.Message)
+                        )
+                    );
+                }
             }
 
         });
