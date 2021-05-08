@@ -22,9 +22,7 @@ func (c *client) read() {
 			msg.Name = c.userData["name"].(string)
 			// 全ての認証サービスがurlを持っているとは限らないためチェックを行う
 			// nilを代入してしまうのは避ける
-			if avatarURL, ok := c.userData["avatar_url"]; ok {
-				msg.AvatarURL = avatarURL.(string)
-			}
+			msg.AvatarURL, _ = c.room.avatar.GetAvatarURL(c)
 			c.room.forward <- msg
 		} else {
 			break

@@ -47,7 +47,8 @@ func main() {
 		github.New("4c86aced996c4c012f75", "258d77a40adf1367faec823baa08f0cd58f04228", "http://localhost:8080/auth/callback/github"),
 		google.New("441470423311-l3va9r1oo3mh0uqtpaehnclpqkb4m90n.apps.googleusercontent.com", "cd6JZE8tagHAT_2NycTfGl8-", "http://localhost:8080/auth/callback/google"),
 	)
-	r := newRoom()
+	// AuthAvatarのインスタンスを作成していないためメモリ使用量が増えることはない
+	r := newRoom(UseAuthAvatar)
 	// os.Stoutでターミナルに出力が行われる
 	r.tracer = trace.New(os.Stdout)
 	// ます*authHandlerのServeHTTPメソッド⇨認証成功⇨*templateHandlerのServeHTTPメソッドが実行
