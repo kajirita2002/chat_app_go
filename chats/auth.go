@@ -9,8 +9,26 @@ import (
 	"strings"
 
 	"github.com/stretchr/gomniauth"
+	gomniauthcommon "github.com/stretchr/gomniauth/common"
 	"github.com/stretchr/objx"
 )
+
+// Avatarの実装がURLを生成するために必要な情報が保持される
+type ChatUser interface {
+	UniqueID() string
+	AvatarURL() string
+}
+
+type chatUser struct {
+	// gomniauthcommon.Userインターフェースを実装したことになる
+	// AvatarURLは実装する必要がなくなる
+	gomniauthcommon.User
+	uniqueID string
+}
+
+func (u chatUser) UniqueID() string {
+	return u.uniqueID
+}
 
 type authHandler struct {
 	next http.Handler
@@ -75,11 +93,11 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		userID := fmt.Sprintf("%x", m.Sum(nil))
 		// データのnameフィールドの部分をBase64にエンコードする
 		// Base64では特殊な文字が入るのを防ぐ(URLやクッキーにセットしたい時に使える)
-		authCookieValue := objx.New(map[string]interface{} {
-			"userid": userID,
-			"name": user.Name(),
+		authCookieValue := objx.New(map[string]interface{}{
+			"userid":     userID,
+			"name":       user.Name(),
 			"avatar_url": user.AvatarURL(),
-			"email": user.Email(),
+			"email":      user.Email(),
 		}).MustBase64()
 		// authというクッキーにデータを保持する
 		http.SetCookie(w, &http.Cookie{
