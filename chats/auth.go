@@ -88,15 +88,21 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatalln("ユーザーを取得できませんでした:", provider, "-", err)
 		}
+		chatUser := &chatUser{User: user}
 		m := md5.New()
 		io.WriteString(m, strings.ToLower(user.Name()))
-		userID := fmt.Sprintf("%x", m.Sum(nil))
+		// ハッシュ値に算出
+		chatUser.uniqueID = fmt.Sprintf("%x", m.Sum(nil))
+		avatarURL, err := avatars.GetAvatarURL(chatUser)
+		if err != nil {
+			log.Fatalln("GetAvatarURLに失敗しました", "-", err)
+		}
 		// データのnameフィールドの部分をBase64にエンコードする
 		// Base64では特殊な文字が入るのを防ぐ(URLやクッキーにセットしたい時に使える)
 		authCookieValue := objx.New(map[string]interface{}{
-			"userid":     userID,
+			"userid":     chatUser.uniqueID,
 			"name":       user.Name(),
-			"avatar_url": user.AvatarURL(),
+			"avatar_url": avatarURL,
 			"email":      user.Email(),
 		}).MustBase64()
 		// authというクッキーにデータを保持する

@@ -17,6 +17,9 @@ import (
 	"github.com/stretchr/objx"
 )
 
+// 現在アクティブなAvatarの実装
+var avatars Avatar = UseFileSystemAvatar
+
 type templateHandler struct {
 	once     sync.Once
 	filename string
