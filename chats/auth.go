@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/md5"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -68,9 +70,13 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatalln("ユーザーを取得できませんでした:", provider, "-", err)
 		}
+		m := md5.New()
+		io.WriteString(m, strings.ToLower(user.Name()))
+		userID := fmt.Sprintf("%x", m.Sum(nil))
 		// データのnameフィールドの部分をBase64にエンコードする
 		// Base64では特殊な文字が入るのを防ぐ(URLやクッキーにセットしたい時に使える)
-		authCookieValue := objx.New(map[string]interface{}{
+		authCookieValue := objx.New(map[string]interface{} {
+			"userid": userID,
 			"name": user.Name(),
 			"avatar_url": user.AvatarURL(),
 			"email": user.Email(),
