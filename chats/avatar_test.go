@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 // GetAvatarURLメソッドのテスト
 func TestAuthAvatar(t *testing.T) {
@@ -19,7 +24,7 @@ func TestAuthAvatar(t *testing.T) {
 	url, err = authAvatar.GetAvatarURL(client)
 	if err != nil {
 		t.Error("値が存在する場合、AuthAvatar.GetAvatarURLは" +
-		"エラーを返すべきではありません")
+			"エラーを返すべきではありません")
 	} else {
 		// 正しい値が返されるか
 		if url != testUrl {
@@ -32,7 +37,7 @@ func TestAuthAvatar(t *testing.T) {
 func TestGravatarAvatar(t *testing.T) {
 	var gravatarAvatar GravatarAvatar
 	client := new(client)
-	client.userData = map[string]interface{} {
+	client.userData = map[string]interface{}{
 		"userid": "0bc83cb571cd1c50ba6f3e8a78ef1346",
 	}
 	url, err := gravatarAvatar.GetAvatarURL(client)
@@ -43,5 +48,23 @@ func TestGravatarAvatar(t *testing.T) {
 		t.Errorf("Gravatar.GetAvatarURLが%sという誤った値を返しました", url)
 	}
 
+}
 
+func TestFileSystemAvatar(t *testing.T) {
+	// テスト用のアバターのファイルを生成する
+	filename := filepath.Join("avatars", "abc.jpg")
+	ioutil.WriteFile(filename, []byte{}, 0777)
+	// deferの関数は異常終了したとしても必ず実行される
+	defer func() { os.Remove(filename) }()
+
+	var fileSystemAvatar FileSystemAvatar
+	client := new(client)
+	client.userData = map[string]interface{}{"userid": "abc"}
+	url, err := fileSystemAvatar.GetAvatarURL(client)
+	if err != nil {
+		t.Error("FileSystemAvatar.GetAvatarURLはエラーを返すべきではありません")
+	}
+	if url != "/avatars/abc.jpg" {
+		t.Errorf("FileSystemAvatar.GetAvatarURLが%sという誤った値を返しました。", url)
+	}
 }
