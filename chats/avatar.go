@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"io/ioutil"
+	"path/filepath"
 )
 
 // ErrNoAvatarインターフェースがアバターのURLを返すことができない場合に発生するエラーです
@@ -57,7 +59,20 @@ var UseFileSystemAvatar FileSystemAvatar
 func (_ FileSystemAvatar) GetAvatarURL(c *client) (string, error) {
 	if userid, ok := c.userData["userid"]; ok {
 		if useridStr, ok := userid.(string); ok {
-			return "/avatars/" + useridStr + ".jpg", nil
+			// 全てのファイルのリストを取得する
+			if files, err := ioutil.ReadDir("avatars"); err == nil {
+				for _, file := range files {
+					// IsDirはディレクトリかどうかを確認し、処理対象からディレクトリを除外する
+					if file.IsDir() {
+						continue
+					}
+					// *はその他の任意の文字列にマッチしていれば良い
+					if match, _ := filepath.Match(useridStr+"*", file.Name());
+						match {
+							return "/avatars/" + file.Name(), nil
+						}
+				}
+			}
 		}
 	}
 	return "", ErrNoAvatarURL
