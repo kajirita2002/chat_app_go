@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"io/ioutil"
+	"log"
 	"path/filepath"
 )
 
@@ -22,7 +23,7 @@ type TryAvatars []Avatar
 
 func (a TryAvatars) GetAvatarURL(u ChatUser) (string, error) {
 	for _, avatar := range a {
-		if url, err := avatar.GetAvatarURL(u); err != nil {
+		if url, err := avatar.GetAvatarURL(u); err == nil {
 			return url, nil
 		}
 	}
@@ -68,6 +69,8 @@ func (_ FileSystemAvatar) GetAvatarURL(u ChatUser) (string, error) {
 			if file.IsDir() {
 				continue
 			}
+			log.Println(u.UniqueID())
+			log.Println(file.Name())
 			// *はその他の任意の文字列にマッチしていれば良い
 			// clientのuserDataフィールドにアクセスする代わりにChatUserインターフェースのUniqueIDメソッドが呼び出されている
 			if match, _ := filepath.Match(u.UniqueID()+"*", file.Name()); match {
