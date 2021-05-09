@@ -17,6 +17,12 @@ import (
 	"github.com/stretchr/objx"
 )
 
+// 現在アクティブなAvatarの実装
+var avatars Avatar = TryAvatars{
+	UseFileSystemAvatar,
+	UseAuthAvatar,
+	UseGravatar}
+
 type templateHandler struct {
 	once     sync.Once
 	filename string
@@ -31,7 +37,7 @@ func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	data := map[string]interface{}{
 		"Host": r.Host,
 	}
-	if authCookie , err := r.Cookie("auth"); err == nil {
+	if authCookie, err := r.Cookie("auth"); err == nil {
 		data["UserData"] = objx.MustFromBase64(authCookie.Value)
 	}
 	t.templ.Execute(w, data)
@@ -47,6 +53,7 @@ func main() {
 		github.New("4c86aced996c4c012f75", "258d77a40adf1367faec823baa08f0cd58f04228", "http://localhost:8080/auth/callback/github"),
 		google.New("441470423311-l3va9r1oo3mh0uqtpaehnclpqkb4m90n.apps.googleusercontent.com", "cd6JZE8tagHAT_2NycTfGl8-", "http://localhost:8080/auth/callback/google"),
 	)
+	// AuthAvatarのインスタンスを作成していないためメモリ使用量が増えることはない
 	r := newRoom()
 	// os.Stoutでターミナルに出力が行われる
 	r.tracer = trace.New(os.Stdout)
@@ -56,6 +63,27 @@ func main() {
 	// http.Handlerを実装していないハンドラはHandleFunc関数を使う
 	http.HandleFunc("/auth/", loginHandler)
 	http.Handle("/room", r)
+	http.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{
+			Name:  "auth",
+			Value: "",
+			Path:  "/",
+			// クッキーは即座に削除される
+			MaxAge: -1,
+		})
+		w.Header()["Location"] = []string{"/chat"}
+		w.WriteHeader(http.StatusTemporaryRedirect)
+	})
+	http.Handle("/upload", &templateHandler{filename: "upload.html"})
+	http.HandleFunc("/uploader", uploaderHandler)
+
+	http.Handle("/avatars/",
+		// http.StriPrefix型はhttp.Handlerを受け取ってパスを変更する(接頭辞の部分を削除)
+		// /avatars/avatarsになってしまうため
+		http.StripPrefix("/avatars/",
+			// 静的なファイルの提供やファイル一覧の作成、404エラーの作成などの機能を備えている
+			// http.Dirは公開しようとしているフォルダーを指定するために利用される
+			http.FileServer(http.Dir("./avatars"))))
 
 	go r.run()
 

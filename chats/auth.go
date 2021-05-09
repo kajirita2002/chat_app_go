@@ -1,14 +1,34 @@
 package main
 
 import (
+	"crypto/md5"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
 
 	"github.com/stretchr/gomniauth"
+	gomniauthcommon "github.com/stretchr/gomniauth/common"
 	"github.com/stretchr/objx"
 )
+
+// Avatarの実装がURLを生成するために必要な情報が保持される
+type ChatUser interface {
+	UniqueID() string
+	AvatarURL() string
+}
+
+type chatUser struct {
+	// gomniauthcommon.Userインターフェースを実装したことになる
+	// AvatarURLは実装する必要がなくなる
+	gomniauthcommon.User
+	uniqueID string
+}
+
+func (u chatUser) UniqueID() string {
+	return u.uniqueID
+}
 
 type authHandler struct {
 	next http.Handler
@@ -68,10 +88,22 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatalln("ユーザーを取得できませんでした:", provider, "-", err)
 		}
+		chatUser := &chatUser{User: user}
+		m := md5.New()
+		io.WriteString(m, strings.ToLower(user.Name()))
+		// ハッシュ値に算出
+		chatUser.uniqueID = fmt.Sprintf("%x", m.Sum(nil))
+		avatarURL, err := avatars.GetAvatarURL(chatUser)
+		if err != nil {
+			log.Fatalln("GetAvatarURLに失敗しました", "-", err)
+		}
 		// データのnameフィールドの部分をBase64にエンコードする
 		// Base64では特殊な文字が入るのを防ぐ(URLやクッキーにセットしたい時に使える)
 		authCookieValue := objx.New(map[string]interface{}{
-			"name": user.Name(),
+			"userid":     chatUser.uniqueID,
+			"name":       user.Name(),
+			"avatar_url": avatarURL,
+			"email":      user.Email(),
 		}).MustBase64()
 		// authというクッキーにデータを保持する
 		http.SetCookie(w, &http.Cookie{

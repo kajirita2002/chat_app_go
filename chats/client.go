@@ -20,6 +20,11 @@ func (c *client) read() {
 		if err := c.socket.ReadJSON(&msg); err == nil {
 			msg.When = time.Now()
 			msg.Name = c.userData["name"].(string)
+			// 全ての認証サービスがurlを持っているとは限らないためチェックを行う
+			// nilを代入してしまうのは避ける
+			if avatarURL, ok := c.userData["avatar_url"]; ok {
+				msg.AvatarURL = avatarURL.(string)
+			}
 			c.room.forward <- msg
 		} else {
 			break
