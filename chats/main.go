@@ -31,7 +31,7 @@ func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	data := map[string]interface{}{
 		"Host": r.Host,
 	}
-	if authCookie , err := r.Cookie("auth"); err == nil {
+	if authCookie, err := r.Cookie("auth"); err == nil {
 		data["UserData"] = objx.MustFromBase64(authCookie.Value)
 	}
 	t.templ.Execute(w, data)
@@ -59,9 +59,9 @@ func main() {
 	http.Handle("/room", r)
 	http.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &http.Cookie{
-			Name: "auth",
+			Name:  "auth",
 			Value: "",
-			Path: "/",
+			Path:  "/",
 			// クッキーは即座に削除される
 			MaxAge: -1,
 		})
@@ -70,6 +70,14 @@ func main() {
 	})
 	http.Handle("/upload", &templateHandler{filename: "upload.html"})
 	http.HandleFunc("/uploader", uploaderHandler)
+
+	http.Handle("/avatars/",
+		// http.StriPrefix型はhttp.Handlerを受け取ってパスを変更する(接頭辞の部分を削除)
+		// /avatars/avatarsになってしまうため
+		http.StripPrefix("/avatars/",
+			// 静的なファイルの提供やファイル一覧の作成、404エラーの作成などの機能を備えている
+			// http.Dirは公開しようとしているフォルダーを指定するために利用される
+			http.FileServer(http.Dir("./avatars"))))
 
 	go r.run()
 
