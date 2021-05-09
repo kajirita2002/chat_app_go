@@ -18,6 +18,17 @@ type Avatar interface {
 	GetAvatarURL(ChatUser) (string, error)
 }
 
+type TryAvatars []Avatar
+
+func (a TryAvatars) GetAvatarURL(u ChatUser) (string, error) {
+	for _, avatar := range a {
+		if url, err := avatar.GetAvatarURL(u); err != nil {
+			return url, nil
+		}
+	}
+	return "", ErrNoAvatarURL
+}
+
 // 空の構造体として定義
 // フィールドがないのでメソッドはレシーバーを参照する必要がない
 type AuthAvatar struct{}
