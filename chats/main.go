@@ -51,7 +51,7 @@ func main() {
 		google.New("441470423311-l3va9r1oo3mh0uqtpaehnclpqkb4m90n.apps.googleusercontent.com", "cd6JZE8tagHAT_2NycTfGl8-", "http://localhost:8080/auth/callback/google"),
 	)
 	// AuthAvatarのインスタンスを作成していないためメモリ使用量が増えることはない
-	r := newRoom(UseFileSystemAvatar)
+	r := newRoom()
 	// os.Stoutでターミナルに出力が行われる
 	r.tracer = trace.New(os.Stdout)
 	// ます*authHandlerのServeHTTPメソッド⇨認証成功⇨*templateHandlerのServeHTTPメソッドが実行
